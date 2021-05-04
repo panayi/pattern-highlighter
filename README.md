@@ -60,7 +60,12 @@ const data = {
 
 1. Code-editor is based on https://github.com/satya164/react-simple-code-editor
 2. Code highlighting is based on https://github.com/FormidableLabs/prism-react-renderer
-3. The `input` to the app is a string with ANSI codes wrapping code that should be styled (any ANSI style is supported)
+3. The `input` to the app is a string with ANSI codes wrapping code that should be styled (any ANSI style is supported).
 4. Using https://github.com/xpl/ansicolor, to parse the `input` string and get the raw code + a list of styles (see `data` (A) above).
 5. The output of `prism-react-renderer` is modified to render the styles of the patterns.
 6. If in the future, the API is modified to return an object such as (A), we'll just need to remove step (4).
+
+## UI
+
+1. Edit the lefthand side editor to change the input (change code or patterns), which updates the right-hand side editor to render highlighted code and patterns.
+2. When you make a change to the righthand side editor, all pattern styles are removed, since patterns may no longer be valid. Once this code is connected to the API, at that point it will make a call to get the new patterns. 
