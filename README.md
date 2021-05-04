@@ -1,3 +1,11 @@
+## Getting started
+
+`yarn start`: Start local development server
+
+`yarn test`: Run tests
+
+Deployed on Vercel: https://pattern-highlighter.vercel.app/
+
 ## Problem
 
 The system generates several patterns in the code that needs to be highlighted in the editor on the frontend side. The API provides a text, in which parts of the text that correspond to patterns are wrapped within ANSI color codes. The objective is to develop an editor (based on existing editor libs such as [Ace](https://ace.c9.io/)) that not only highlights the code, but also highlights the patterns, according to the provided ANSI color codes.
