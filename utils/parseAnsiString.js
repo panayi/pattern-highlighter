@@ -16,7 +16,7 @@ const parseAnsiString = (str) => {
       styles.push({
         startIndex: count,
         endIndex: count + item.text.length,
-        style: getStyleObjectFromString(item.css),
+        style: getStyleFromCss(item.css),
       })
     }
 
@@ -27,6 +27,24 @@ const parseAnsiString = (str) => {
       styles,
     }
   }, { text: '', styles: [] })
+}
+
+const getStyleFromCss = (css) => {
+  const style = getStyleObjectFromString(css);
+
+  let background = null;
+
+  if (style.background) {
+    // Add some opacity so that cursor is visible
+    // TODO: should check if background is in rgb format (use npm polished if needed)
+    const rgb = style.background.match(/\d+/g)
+    background = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.4)`
+  }
+
+  return {
+    ...style,
+    background,
+  }
 }
 
 export default parseAnsiString;

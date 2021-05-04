@@ -1,7 +1,7 @@
 import React from "react";
 import SimpleCodeEditor from 'react-simple-code-editor'
 import Highlight, { defaultProps } from 'prism-react-renderer'
-import theme from 'prism-react-renderer/themes/nightOwl'
+import theme from 'prism-react-renderer/themes/vsLight'
 
 const editorStyles = {
   height: '100%',
