@@ -1,12 +1,10 @@
-## Problem statement
+## Problem
 
-The system generates several patterns in the code that needs to be highlighted in the editor on the frontend side. The API provides a text, in which parts of the text that correspond to patterns are wrapped within ANSI color codes. The objective is to develop an editor (based on existing editor libs such as [Ace](https://ace.c9.io/)) that not only  highlights the code, but also highlights those patterns according to the provided ANSI color codes.
+The system generates several patterns in the code that needs to be highlighted in the editor on the frontend side. The API provides a text, in which parts of the text that correspond to patterns are wrapped within ANSI color codes. The objective is to develop an editor (based on existing editor libs such as [Ace](https://ace.c9.io/)) that not only highlights the code, but also highlights the patterns, according to the provided ANSI color codes.
 
 ## Explore potential solutions
 
-1. The ACE editor describes how to do custom highlighting [here](https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode#extending-the-highlighter). Highlighting is based on matching regular expressions and passing tokens (classnames), when there's a match.
-
-2. I'm thinking that including ANSI codes in the text and then highlighting with regex has a drawback. What if the actual code contains ANSI color codes, and the editor mistakes them for patterns delimiters and highlights them (and hence removing actual code)? For example:
+1. One way is to use regular experssion matching with the ACE editor ([see here](https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode#extending-the-highlighter)). However, this approach might interfere with default styles applied by ACEditor for the current language (I haven't tried it). Moreover, it can be hard to account for cases where the actual code contains ANSI codes. For example:
 
 ```
 // The following is actual code and should not be highlighted:
@@ -22,49 +20,39 @@ const b = (arr) => {
 }
 ```
 
-Therefore mixing content (code) with style can cause unexpected results. Instead, the API should provide a structure that separates styles from content. For example (1):
+In order to avoid such cases, it is best that the API provides the code and styles separately, such as the following (A):
 
 ```
 const data = {
-  code: "code goes here",
+  code: "const a = 1; // etc.",
   styles: [
     {
       startIndex: 3,
       endIndex: 10,
-      bg: 'red',
+      style: {
+        backgroundColor: 'red',
+      }
     },
     {
       startIndex: 29,
       endIndex: 36,
-      bg: 'red',
+      style: {
+        backgroundColor: 'red',
+      }
     },
     // ...etc
   ]
 }
 ```
 
-On the frontend we won't rely on regex for applying the patterns styles, but instead implement decorators that modify the output of the editor (AceEditor, Draft.js) to apply the pattern styles, before rendering according to the following pseudo-algorithm:
 
-```
-FOR i = 0 to LENGTH(text)
-  CHAR = text[i]
+2. A different approach is to let the editor highlight the raw code (without the ANSI codes) and before rendering, alter the output to insert the background-colors as specified by the patterns. This approach decouples code highlighting from patterns highlighting, and makes it easier to switch to the implementation suggested in (A) above. It's also easier to test and implement.
 
-  FOR j = 0 to LENGTH(data.styles)
-    STYLE = data.styles[j]
+## Overview of the implementation
 
-    IF i >= STYLE.startIndex AND i < STYLE.endIndex
-      CHAR = APPLY_STYLE(CHAR, STYLE.bg)
-    END
-  END
-END
-```
-
-Where `APPLY_STYLE` is the method for transforming a character to apply a style. In the case of React we'll be wrapping the character with a component that applies the style. I think this approach is easier to implement and test, and less prone to bugs. Moreover it is easier to apply overlapping patterns (one or more characters are part of multiple patterns) — not sure how easy it is to achieve this with regex matching.
-
-### Proposed Solution
-
-Reading around and testing different methods, I'm going to go for the following solution:
-
-- Use this syntax highlighter https://github.com/react-syntax-highlighter/react-syntax-highlighter which has the benefit in that it builds a proper React DOM tree and updates DOM as needed (instead of re-rendering like other solutions)
-- Use this approach for rendering a textarea + the highlighed-syntax on top. User edits the text in the textarea but sees the highlighted syntax. This avoid the need for loading heavy editors such as AceEditor.
-- Use a custom renderer for react-syntax-highlighter that modifies the output before rendering and inserts the pattern highlights. The custom renderer will take as input the text with the ANSI color-codes inline => extract a list of styles as (1) above => apply the styles and render. Later, if we change the backend to use the (1) approach above, we'll remove the intermediate step.
+1. Code-editor is based on https://github.com/satya164/react-simple-code-editor
+2. Code highlighting is based on https://github.com/FormidableLabs/prism-react-renderer
+3. The `input` to the app is a string with ANSI codes wrapping code that should be styled (any ANSI style is supported)
+4. Using https://github.com/xpl/ansicolor, to parse the `input` string and get the raw code + a list of styles (see `data` (A) above).
+5. The output of `prism-react-renderer` is modified to render the styles of the patterns.
+6. If in the future, the API is modified to return an object such as (A), we'll just need to remove step (4).
